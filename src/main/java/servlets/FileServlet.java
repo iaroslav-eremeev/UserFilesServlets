@@ -16,24 +16,12 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet("/file")
 public class FileServlet extends HttpServlet {
 
-    /**
-     * Написать сервлет FileServlet метод POST который принимает id пользователя и файл,
-     * добавляет информацию об этом файле в БД
-     * и сохраняет файл на сервере
-     * Таблица UserFiles состоит из колонок: id, filename, serverFilename, user_id.
-     * Для одного пользователя файлы повторяться не могут.
-     * Так как у разных пользователей названия файлов могут быть одинаковые, то нужно на сервер их сохранять по следующему механизму:
-     * 1. Принять файл на сервер
-     * 2. Добавить информацию в БД об этом файле, кроме колонки serverFilename
-     * 3. После того, как база присвоит id, serverFilename должен быть равен "id.расширение, которое было у файла изначально"
-     * 4. Произвести обновление колонки serverFilename, исходя из пункта 3
-     * 5. Произвести сохранение файла под именем serverFilename
-     */
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         UnicodeSetup.setUnicode(req, resp);
@@ -65,6 +53,7 @@ public class FileServlet extends HttpServlet {
                             String userId = req.getParameter("userId");
                             String fileName = item.getName();
                             User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
+                            DAO.closeOpenedSession();
                             if (user != null){
                                 // Add file to database
                                 UserFile userFile = new UserFile(fileName, user);
@@ -85,14 +74,6 @@ public class FileServlet extends HttpServlet {
                                 writer.println("There is no user with such id!");
                                 resp.setStatus(400);
                             }
-                        } else {
-                            String id = item.getString();
-                            String value = item.getString();
-                            switch (name) {
-                                case "note" -> {
-                                    System.out.println(value);
-                                }
-                            }
                         }
                     }
                 }
@@ -107,40 +88,56 @@ public class FileServlet extends HttpServlet {
         }
     }
 
-    /*@Override
+    /**
+     * Написать в FileServlet метод GET,
+     * который для заданного id пользователя выдает список его загруженных на сервер файлов,
+     * а так же возвращает файл для заданного id пользователя и имени файла
+     */
+
+    @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        req.setCharacterEncoding("utf-8");
-        resp.setCharacterEncoding("utf-8");
-
+        UnicodeSetup.setUnicode(req, resp);
         ServletContext cntx = req.getServletContext();
-        File dir = new File("C:\\users_files");
+        // The file will be saved to desktop
+        File dir = new File("C:\\Users\\tirsb\\OneDrive\\Desktop");
+        String userId = req.getParameter("userId");
         String filename = req.getParameter("filename");
-        String mime = cntx.getMimeType(filename);
-        System.out.println(mime);
-        if (mime == null) {
-            resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-            resp.getWriter().println("Incorrect type file");
-            resp.setStatus(400);
-            return;
-        }
 
-        File file = new File(dir + File.separator + filename);
-
-        try (FileInputStream in = new FileInputStream(file);
-             OutputStream out = resp.getOutputStream()) {
-            resp.setContentType(mime);
-            resp.setContentLength((int) file.length());
-            long length = in.transferTo(out);
-            System.out.println("Bytes transferred: " + length);
+        if (userId != null && filename == null){
+            User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
+            ArrayList<UserFile> userFiles = user.getUserFiles();
+            DAO.closeOpenedSession();
+            resp.getWriter().println("All the files stored in the database for user " + user.getName() + ":");
+            resp.getWriter().println(userFiles);
         }
-        catch (FileNotFoundException e){
-            resp.getWriter().println("Incorrect file name");
+        else if (userId != null){
+            String mime = cntx.getMimeType(filename);
+            if (mime == null) {
+                resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+                resp.getWriter().println("Incorrect type file");
+                resp.setStatus(400);
+                return;
+            }
+            File file = new File(dir + File.separator + filename);
+            try (FileInputStream in = new FileInputStream(file);
+                 OutputStream out = resp.getOutputStream()) {
+                resp.setContentType(mime);
+                resp.setContentLength((int) file.length());
+                long length = in.transferTo(out);
+                System.out.println("Bytes transferred: " + length);
+            }
+            catch (FileNotFoundException e){
+                resp.getWriter().println("Incorrect file name");
+                resp.setStatus(400);
+            }
+            catch (IOException e){
+                resp.getWriter().println("File Error!");
+                resp.setStatus(400);
+            }
+        }
+        else {
+            resp.getWriter().println("Incorrect request");
             resp.setStatus(400);
         }
-        catch (IOException e){
-            resp.getWriter().println("File Error!");
-            resp.setStatus(400);
-        }
-    }*/
-
+    }
 }
