@@ -25,24 +25,17 @@ public class UserServlet extends HttpServlet {
             resp.getWriter().println("Incorrect input");
             return;
         }
-        if (DAO.getObjectByParam("login", login, User.class) != null) {
-            resp.setStatus(400);
-            resp.getWriter().println("User with this login already exists");
-            return;
-        }
-        DAO.closeOpenedSession();
-        if (DAO.getObjectByParam("name", name, User.class) != null) {
-            resp.setStatus(400);
-            resp.getWriter().println("User with this name already exists");
-            return;
-        }
-        DAO.closeOpenedSession();
         try {
+            if (DAO.getObjectByParam("login", login, User.class) != null) {
+                resp.setStatus(400);
+                resp.getWriter().println("User with this login already exists");
+                DAO.closeOpenedSession();
+                return;
+            }
             User user = new User(login, password, name, surname);
             DAO.addObject(user);
             resp.getWriter().write(new ObjectMapper().writeValueAsString(user));
         } catch (Exception e) {
-            e.printStackTrace();
             resp.setStatus(400);
             resp.getWriter().println(e.getMessage());
         }

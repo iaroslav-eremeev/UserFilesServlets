@@ -1,9 +1,11 @@
 package model;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.Entity;
 import lombok.*;
 
 import javax.persistence.*;
+import java.util.ArrayList;
 
 @Entity
 @Table(name = "users")
@@ -26,5 +28,10 @@ public class User {
     @Column(name = "surname")
     @NonNull
     private String surname;
+
+    @OneToMany
+    @JsonIgnore
+    @ToString.Exclude
+    private ArrayList<UserFile> userFiles = new ArrayList<>();
 
 }
