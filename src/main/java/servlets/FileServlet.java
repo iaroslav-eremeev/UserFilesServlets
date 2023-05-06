@@ -1,8 +1,13 @@
 package servlets;
 
+import hibernate.DAO;
+import model.User;
+import model.UserFile;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
+import org.hibernate.transform.AliasToEntityMapResultTransformer;
+import util.Constants;
 import util.UnicodeSetup;
 
 import javax.servlet.ServletContext;
@@ -17,7 +22,8 @@ import java.util.List;
 public class FileServlet extends HttpServlet {
 
     /**
-     * Написать сервлет FileServlet метод POST который принимает id пользователя и файл, добавляет информацию об этом файле в БД
+     * Написать сервлет FileServlet метод POST который принимает id пользователя и файл,
+     * добавляет информацию об этом файле в БД
      * и сохраняет файл на сервере
      * Таблица UserFiles состоит из колонок: id, filename, serverFilename, user_id.
      * Для одного пользователя файлы повторяться не могут.
@@ -41,7 +47,7 @@ public class FileServlet extends HttpServlet {
             File repository = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
             factory.setRepository(repository);
 
-            String uploadPath = "C:\\users_files";
+            String uploadPath = Constants.SERVER_URL;
             File tempDir = new File(uploadPath);
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -56,12 +62,31 @@ public class FileServlet extends HttpServlet {
                 if (formItems != null && formItems.size() > 0) {
                     for (FileItem item : formItems) {
                         if (!item.isFormField()) {
+                            String userId = req.getParameter("userId");
                             String fileName = item.getName();
-                            item.write(new File(tempDir, fileName));
-                            writer.println("File "
-                                    + fileName + " has uploaded successfully!");
+                            User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
+                            if (user != null){
+                                // Add file to database
+                                UserFile userFile = new UserFile(fileName, user);
+                                DAO.addObject(userFile);
+                                // Generate serverFilename and update file in the database
+                                String fileExtension = fileName.substring(fileName.lastIndexOf("."));
+                                String serverFilename = userFile.getId() + fileExtension;
+                                userFile.setServerFilename(serverFilename);
+                                DAO.updateObject(userFile);
+                                // Writing item to a file
+                                item.write(new File(tempDir, serverFilename));
+                                writer.println("File "
+                                        + fileName
+                                        + " has been successfully uploaded under the name "
+                                        + serverFilename);
+                            }
+                            else {
+                                writer.println("There is no user with such id!");
+                                resp.setStatus(400);
+                            }
                         } else {
-                            String name = item.getFieldName();
+                            String id = item.getString();
                             String value = item.getString();
                             switch (name) {
                                 case "note" -> {
@@ -78,11 +103,11 @@ public class FileServlet extends HttpServlet {
                 resp.setStatus(400);
             }
         } else {
-            writer.println("No multipart");
+            writer.println("This is not a multipart request");
         }
     }
 
-    @Override
+    /*@Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         req.setCharacterEncoding("utf-8");
         resp.setCharacterEncoding("utf-8");
@@ -116,8 +141,6 @@ public class FileServlet extends HttpServlet {
             resp.getWriter().println("File Error!");
             resp.setStatus(400);
         }
-    }
-
-
+    }*/
 
 }
