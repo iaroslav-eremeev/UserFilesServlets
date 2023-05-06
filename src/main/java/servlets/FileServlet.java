@@ -4,6 +4,7 @@ import hibernate.DAO;
 import model.User;
 import model.UserFile;
 import org.apache.commons.fileupload.FileItem;
+import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import util.Constants;
@@ -47,34 +48,49 @@ public class FileServlet extends HttpServlet {
             try {
                 List<FileItem> formItems = upload.parseRequest(req);
                 if (formItems != null && formItems.size() > 0) {
+                    String userId = null;
+                    FileItem fileItem = null;
                     for (FileItem item : formItems) {
-                        if (!item.isFormField()) {
-                            String userId = req.getParameter("userId");
-                            String fileName = item.getName();
-                            User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
-                            DAO.closeOpenedSession();
-                            if (user != null){
-                                // Add file to database
-                                UserFile userFile = new UserFile(fileName, user);
-                                DAO.addObject(userFile);
-                                // Generate serverFilename and update file in the database
-                                String fileExtension = fileName.substring(fileName.lastIndexOf("."));
-                                String serverFilename = userFile.getId() + fileExtension;
-                                userFile.setServerFilename(serverFilename);
-                                DAO.updateObject(userFile);
-                                // Writing item to a file
-                                item.write(new File(tempDir, serverFilename));
-                                writer.println("File "
-                                        + fileName
-                                        + " has been successfully uploaded under the name "
-                                        + serverFilename);
-                            }
-                            else {
-                                writer.println("There is no user with such id!");
-                                resp.setStatus(400);
-                            }
+                        if (item.isFormField() && "userId".equals(item.getFieldName())) {
+                            userId = item.getString();
+                        } else if (!item.isFormField()) {
+                            fileItem = item;
                         }
                     }
+                    if (userId != null && fileItem != null){
+                        String fileName = fileItem.getName();
+                        User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
+                        DAO.closeOpenedSession();
+                        if (user != null){
+                            // Add file to database
+                            UserFile userFile = new UserFile(fileName, user);
+                            DAO.addObject(userFile);
+                            // Generate serverFilename and update file in the database
+                            String fileExtension = fileName.substring(fileName.lastIndexOf("."));
+                            String serverFilename = userFile.getId() + fileExtension;
+                            userFile.setServerFilename(serverFilename);
+                            DAO.updateObject(userFile);
+                            // Writing item to a file
+                            fileItem.write(new File(tempDir, serverFilename));
+                            writer.println("File "
+                                    + fileName
+                                    + " has been successfully uploaded under the name "
+                                    + serverFilename);
+                        }
+                        else {
+                            writer.println("There is no user with such id!");
+                            resp.setStatus(400);
+                        }
+                    }
+                    else {
+                        System.out.println("Incorrect request parameters");
+                        resp.setStatus(400);
+                    }
+
+                }
+                else {
+                    System.out.println("Incorrect request. A userId and a file are needed");
+                    resp.setStatus(400);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -83,7 +99,7 @@ public class FileServlet extends HttpServlet {
                 resp.setStatus(400);
             }
         } else {
-            writer.println("This is not a multipart request");
+            writer.println("Incorrect request. This is not a multipart request");
         }
     }
 
