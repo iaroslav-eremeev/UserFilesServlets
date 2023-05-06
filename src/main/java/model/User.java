@@ -5,6 +5,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @Table(name = "users")
@@ -29,8 +30,7 @@ public class User {
     private String surname;
 
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
-    @JsonIgnore
     @ToString.Exclude
-    private ArrayList<UserFile> userFiles = new ArrayList<>();
+    private List<UserFile> userFiles = new ArrayList<>();
 
 }

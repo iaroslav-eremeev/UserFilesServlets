@@ -98,7 +98,7 @@ public class FileServlet extends HttpServlet {
 
         if (userId != null && filename == null){
             User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
-            ArrayList<UserFile> userFiles = user.getUserFiles();
+            List<UserFile> userFiles = user.getUserFiles();
             DAO.closeOpenedSession();
             resp.getWriter().println("All the files stored in the database for user " + user.getName() + ":");
             resp.getWriter().println(userFiles);
