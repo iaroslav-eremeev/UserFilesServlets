@@ -1,32 +1,30 @@
 package model;
 
 import jakarta.persistence.Entity;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import lombok.NonNull;
+import lombok.*;
 
 import javax.persistence.*;
 
 @Entity
 @Table(name = "users")
 @Data
-@AllArgsConstructor
+@RequiredArgsConstructor
 @NoArgsConstructor
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long id;
-    @Column(unique = true)
+    @Column(name = "login", unique = true)
     @NonNull
     private String login;
-    @Column
+    @Column(name = "password")
     @NonNull
     private String password;
-    @Column
+    @Column(name = "name")
     @NonNull
     private String name;
-    @Column
+    @Column(name = "surname")
     @NonNull
     private String surname;
+
 }

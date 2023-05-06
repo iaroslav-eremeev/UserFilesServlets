@@ -1,10 +1,11 @@
 package servlets;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import hibernate.DAO;
 import model.User;
 import util.UnicodeSetup;
 
 import javax.servlet.annotation.WebServlet;
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -18,7 +19,8 @@ public class UserServlet extends HttpServlet {
         String login = req.getParameter("login");
         String password = req.getParameter("password");
         String name = req.getParameter("name");
-        if (login == null || password == null || name == null) {
+        String surname = req.getParameter("surname");
+        if (login == null || password == null || name == null || surname == null) {
             resp.setStatus(400);
             resp.getWriter().println("Incorrect input");
             return;
@@ -36,7 +38,7 @@ public class UserServlet extends HttpServlet {
         }
         DAO.closeOpenedSession();
         try {
-            User user = new User(login, password, name);
+            User user = new User(login, password, name, surname);
             DAO.addObject(user);
             resp.getWriter().write(new ObjectMapper().writeValueAsString(user));
         } catch (Exception e) {
