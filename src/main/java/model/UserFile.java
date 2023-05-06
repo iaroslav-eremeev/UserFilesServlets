@@ -23,4 +23,13 @@ public class UserFile {
     @NonNull
     private User user;
 
+    @Override
+    public String toString() {
+        return "UserFile{" +
+                "id=" + id +
+                ", filename='" + filename + '\'' +
+                ", serverFilename='" + serverFilename + '\'' +
+                ", user=" + user.getLogin() +
+                '}';
+    }
 }
