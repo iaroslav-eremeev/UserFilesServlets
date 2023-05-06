@@ -1,10 +1,9 @@
 package model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.persistence.Entity;
+import jakarta.persistence.*;
 import lombok.*;
 
-import javax.persistence.*;
 import java.util.ArrayList;
 
 @Entity
@@ -29,7 +28,7 @@ public class User {
     @NonNull
     private String surname;
 
-    @OneToMany
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     @JsonIgnore
     @ToString.Exclude
     private ArrayList<UserFile> userFiles = new ArrayList<>();

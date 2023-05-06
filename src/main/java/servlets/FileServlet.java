@@ -6,7 +6,6 @@ import model.UserFile;
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import org.hibernate.transform.AliasToEntityMapResultTransformer;
 import util.Constants;
 import util.UnicodeSetup;
 
@@ -87,12 +86,6 @@ public class FileServlet extends HttpServlet {
             writer.println("This is not a multipart request");
         }
     }
-
-    /**
-     * Написать в FileServlet метод GET,
-     * который для заданного id пользователя выдает список его загруженных на сервер файлов,
-     * а так же возвращает файл для заданного id пользователя и имени файла
-     */
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
