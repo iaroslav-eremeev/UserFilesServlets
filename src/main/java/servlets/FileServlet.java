@@ -114,10 +114,11 @@ public class FileServlet extends HttpServlet {
 
         if (userId != null && filename == null){
             User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
+            assert user != null;
             List<UserFile> userFiles = user.getUserFiles();
-            DAO.closeOpenedSession();
             resp.getWriter().println("All the files stored in the database for user " + user.getName() + ":");
             resp.getWriter().println(userFiles);
+            DAO.closeOpenedSession();
         }
         else if (userId != null){
             String mime = cntx.getMimeType(filename);
