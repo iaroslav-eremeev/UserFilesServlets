@@ -4,10 +4,8 @@ import hibernate.DAO;
 import model.User;
 import model.UserFile;
 import org.apache.commons.fileupload.FileItem;
-import org.apache.commons.fileupload.disk.DiskFileItem;
 import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
-import util.Constants;
 import util.UnicodeSetup;
 
 import javax.servlet.ServletContext;
@@ -16,7 +14,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
-import java.util.ArrayList;
 import java.util.List;
 
 @WebServlet("/file")
@@ -35,7 +32,7 @@ public class FileServlet extends HttpServlet {
             File repository = (File) servletContext.getAttribute("javax.servlet.context.tempdir");
             factory.setRepository(repository);
 
-            String uploadPath = Constants.SERVER_URL;
+            String uploadPath = "C:\\users_files";
             File tempDir = new File(uploadPath);
             if (!tempDir.exists()) {
                 tempDir.mkdirs();
@@ -60,8 +57,15 @@ public class FileServlet extends HttpServlet {
                     if (userId != null && fileItem != null){
                         String fileName = fileItem.getName();
                         User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
-                        DAO.closeOpenedSession();
                         if (user != null){
+                            if (user.getUserFiles() != null){
+                                for (int i = 0; i < user.getUserFiles().size(); i++) {
+                                    if (user.getUserFiles().get(i).getFilename().equals(fileName)){
+                                        writer.println("This user has already uploaded a file with this name!");
+                                        resp.setStatus(400);
+                                    }
+                                }
+                            }
                             // Add file to database
                             UserFile userFile = new UserFile(fileName, user);
                             DAO.addObject(userFile);
@@ -76,6 +80,7 @@ public class FileServlet extends HttpServlet {
                                     + fileName
                                     + " has been successfully uploaded under the name "
                                     + serverFilename);
+                            DAO.closeOpenedSession();
                         }
                         else {
                             writer.println("There is no user with such id!");
@@ -108,7 +113,7 @@ public class FileServlet extends HttpServlet {
         UnicodeSetup.setUnicode(req, resp);
         ServletContext cntx = req.getServletContext();
         // The file will be saved to desktop
-        File dir = new File("C:\\Users\\tirsb\\OneDrive\\Desktop");
+        File dir = new File("C:\\users_files");
         String userId = req.getParameter("userId");
         String filename = req.getParameter("filename");
 
@@ -121,6 +126,14 @@ public class FileServlet extends HttpServlet {
             DAO.closeOpenedSession();
         }
         else if (userId != null){
+            User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
+            assert user != null;
+            UserFile userFile = (UserFile) DAO.getObjectByParam("filename", filename, UserFile.class);
+            if (userFile == null || !userFile.getUser().getLogin().equals(user.getLogin())) {
+                resp.getWriter().println("File not found");
+                resp.setStatus(400);
+                return;
+            }
             String mime = cntx.getMimeType(filename);
             if (mime == null) {
                 resp.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -129,6 +142,7 @@ public class FileServlet extends HttpServlet {
                 return;
             }
             File file = new File(dir + File.separator + filename);
+            System.out.println(file);
             try (FileInputStream in = new FileInputStream(file);
                  OutputStream out = resp.getOutputStream()) {
                 resp.setContentType(mime);
