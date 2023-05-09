@@ -8,6 +8,7 @@ import org.apache.commons.fileupload.disk.DiskFileItemFactory;
 import org.apache.commons.fileupload.servlet.ServletFileUpload;
 import util.UnicodeSetup;
 
+import javax.persistence.Query;
 import javax.servlet.ServletContext;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -15,6 +16,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.util.List;
+import java.util.Objects;
 
 @WebServlet("/file")
 public class FileServlet extends HttpServlet {
@@ -61,9 +63,12 @@ public class FileServlet extends HttpServlet {
                             // Add file to database
                             UserFile userFile = new UserFile(fileName, user);
                             DAO.addObject(userFile);
-                            // Generate serverFilename and update file in the database
+                            // Generate unique serverFilename and update file in the database
                             String fileExtension = fileName.substring(fileName.lastIndexOf("."));
-                            String serverFilename = userFile.getId() + fileExtension;
+                            String userFileId = String
+                                    .valueOf(Objects.requireNonNull(DAO.getAllObjects(UserFile.class))
+                                            .size());
+                            String serverFilename = userFileId + fileExtension;
                             userFile.setServerFilename(serverFilename);
                             DAO.updateObject(userFile);
                             // Writing item to a file
