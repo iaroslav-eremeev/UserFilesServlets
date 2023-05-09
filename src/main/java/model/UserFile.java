@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
-@Table(name = "userFiles")
+@Table(name = "userFiles", uniqueConstraints = {
+        @UniqueConstraint(columnNames = {"userId", "filename"})
+})
 @Data
 @RequiredArgsConstructor
 @NoArgsConstructor

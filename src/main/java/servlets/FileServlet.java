@@ -58,14 +58,6 @@ public class FileServlet extends HttpServlet {
                         String fileName = fileItem.getName();
                         User user = (User) DAO.getObjectById(Long.parseLong(userId), User.class);
                         if (user != null){
-                            if (user.getUserFiles() != null){
-                                for (int i = 0; i < user.getUserFiles().size(); i++) {
-                                    if (user.getUserFiles().get(i).getFilename().equals(fileName)){
-                                        writer.println("This user has already uploaded a file with this name!");
-                                        resp.setStatus(400);
-                                    }
-                                }
-                            }
                             // Add file to database
                             UserFile userFile = new UserFile(fileName, user);
                             DAO.addObject(userFile);
@@ -141,7 +133,8 @@ public class FileServlet extends HttpServlet {
                 resp.setStatus(400);
                 return;
             }
-            File file = new File(dir + File.separator + filename);
+            String serverFilename = userFile.getServerFilename();
+            File file = new File(dir + File.separator + serverFilename);
             System.out.println(file);
             try (FileInputStream in = new FileInputStream(file);
                  OutputStream out = resp.getOutputStream()) {
